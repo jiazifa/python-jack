@@ -1,5 +1,7 @@
 from enum import Enum
+from io import TextIOWrapper
 from utils import VALID_SINGLE_SYMBOL
+
 
 class TokenType(Enum):
     KEY_WORDS = 1,
@@ -11,7 +13,8 @@ class TokenType(Enum):
     SYMBOL = 7,   # 合法的符号
     NONE = 8,     # 无类型
     ERROR = 9,    # 错误
-    ENDOFFILE = 10 # 文件结束
+    ENDOFFILE = 10  # 文件结束
+
 
 class Token:
     kind: TokenType
@@ -30,90 +33,117 @@ class Token:
     def __repr__(self):
         return self.__str__()
 
+
+DEFAULT_KEY_WORDS = {
+    "class": Token(TokenType.KEY_WORDS, "class"),
+    "class": Token(TokenType.KEY_WORDS, "class"),
+    "constructor": Token(TokenType.KEY_WORDS, "constructor"),
+    "function": Token(TokenType.KEY_WORDS, "function"),
+    "method": Token(TokenType.KEY_WORDS, "method"),
+    "field": Token(TokenType.KEY_WORDS, "field"),
+    "static": Token(TokenType.KEY_WORDS, "static"),
+    "int": Token(TokenType.KEY_WORDS, "int"),
+    "char": Token(TokenType.KEY_WORDS, "char"),
+    "boolean": Token(TokenType.KEY_WORDS, "boolean"),
+    "void": Token(TokenType.KEY_WORDS, "void"),
+    "true": Token(TokenType.KEY_WORDS, "true"),
+    "false": Token(TokenType.KEY_WORDS, "false"),
+    "this": Token(TokenType.KEY_WORDS, "this"),
+    "if": Token(TokenType.KEY_WORDS, "if"),
+    "else": Token(TokenType.KEY_WORDS, "else"),
+    "while": Token(TokenType.KEY_WORDS, "while"),
+    "return": Token(TokenType.KEY_WORDS, "return"),
+}
+
+DEFAULT_SYMBOL_TABLE = {
+    "{": Token(TokenType.SYMBOL, "{"),
+    "}": Token(TokenType.SYMBOL, "}"),
+    "(": Token(TokenType.SYMBOL, "("),
+    ")": Token(TokenType.SYMBOL, ")"),
+    "[": Token(TokenType.SYMBOL, "["),
+    "]": Token(TokenType.SYMBOL, "]"),
+    ".": Token(TokenType.SYMBOL, "."),
+    ",": Token(TokenType.SYMBOL, ","),
+    ";": Token(TokenType.SYMBOL, ";"),
+    "+": Token(TokenType.SYMBOL, "+"),
+    "-": Token(TokenType.SYMBOL, "-"),
+    "*": Token(TokenType.SYMBOL, "*"),
+    "/": Token(TokenType.SYMBOL, "/"),
+    "&": Token(TokenType.SYMBOL, "&"),
+    "|": Token(TokenType.SYMBOL, "|"),
+    "~": Token(TokenType.SYMBOL, "~"),
+    "<": Token(TokenType.SYMBOL, "<"),
+    ">": Token(TokenType.SYMBOL, ">"),
+    "=": Token(TokenType.SYMBOL, "="),
+
+    ">=": Token(TokenType.SYMBOL, ">="),
+    "<=": Token(TokenType.SYMBOL, "<="),
+    "==": Token(TokenType.SYMBOL, "=="),
+    "!=": Token(TokenType.SYMBOL, "!="),
+
+    ";": Token(TokenType.SYMBOL, ";"),
+}
+
+
 class Lexer:
-    text: str
-    pos: int
     current_char: str
 
-    def __init__(self, text: str):
-        self.text = text
-        self.pos = 0
-        self.current_char = self.text[self.pos]
+    filename: str
+    _alllines: list  # 所有行
+    _linecount: int  # 行数
+    _line_index: int  # 最近一行
+    _char_index: int  # 字符索引
+    _indexpath: (int, int)  # 字符索引
+
+    def __init__(self, filename: str):
+        self.filename = filename
+        with open(filename, 'r') as f:
+            self._alllines = f.readlines()
+            self._linecount = len(self._alllines)
+
+        self._line_index = 0
+        self._char_index = 0
+        self._indexpath = (0, 0)
+        self.current_char = self._alllines[self._line_index][self._char_index]
+
         self._setupkeywords()
         self._setupsymbols()
 
-    def error(self):
-        raise Exception('Invalid character')
+    def _get_next_char(self):
+        current_line = self._alllines[self._line_index]
+        if self._char_index >= len(current_line):
+            current_line = self._get_next_line()
+            self._char_index = -1
+        if not current_line:
+            return None
+        self._char_index += 1
+        if self._char_index >= len(current_line):
+            return None
+        self.current_char = current_line[self._char_index]
+
+    def _get_next_line(self):
+        self._char_index = 0
+        self._line_index += 1
+        if self._line_index >= self._linecount:
+            return None
+        return self._alllines[self._line_index]
+
+    def error(self, content: str = ""):
+        content: str = "Invalid character" + "line: " + \
+            str(self._line_index) + "char" + str(self._char_index) + content
+        raise Exception(content)
 
     def _setupkeywords(self):
-        kind = TokenType.KEY_WORDS
-        self._keywords = {}
-        self._keywords["class"] = Token(kind, "class")
-        self._keywords["class"] = Token(kind, "class")
-        self._keywords["constructor"] = Token(kind, "constructor")
-        self._keywords["function"] = Token(kind, "function")
-        self._keywords["method"] = Token(kind, "method")
-        self._keywords["field"] = Token(kind, "field")
-        self._keywords["static"] = Token(kind, "static")
-        self._keywords["int"] = Token(kind, "int")
-        self._keywords["char"] = Token(kind, "char")
-        self._keywords["boolean"] = Token(kind, "boolean")
-        self._keywords["void"] = Token(kind, "void")
-        self._keywords["true"] = Token(kind, "true")
-        self._keywords["false"] = Token(kind, "false")
-        self._keywords["this"] = Token(kind, "this")
-        self._keywords["if"] = Token(kind, "if")
-        self._keywords["else"] = Token(kind, "else")
-        self._keywords["while"] = Token(kind, "while")
-        self._keywords["return"] = Token(kind, "return")
+        self._keywords = DEFAULT_KEY_WORDS
 
     def _setupsymbols(self):
-        kind = TokenType.SYMBOL
-        self._symbols = {}
-        self._symbols["{"] = Token(kind, "{")
-        self._symbols["}"] = Token(kind, "}")
-        self._symbols["("] = Token(kind, "(")
-        self._symbols[")"] = Token(kind, ")")
-        self._symbols["["] = Token(kind, "[")
-        self._symbols["]"] = Token(kind, "]")
-        self._symbols["."] = Token(kind, ".")
-        self._symbols[","] = Token(kind, ",")
-        self._symbols[";"] = Token(kind, ";")
-        self._symbols["+"] = Token(kind, "+")
-        self._symbols["-"] = Token(kind, "-")
-        self._symbols["*"] = Token(kind, "*")
-        self._symbols["/"] = Token(kind, "/")
-        self._symbols["&"] = Token(kind, "&")
-        self._symbols["|"] = Token(kind, "|")
-        self._symbols["~"] = Token(kind, "~")
-        self._symbols["<"] = Token(kind, "<")
-        self._symbols[">"] = Token(kind, ">")
-        self._symbols["="] = Token(kind, "=")
-
-        self._symbols[">="] = Token(kind, ">=")
-        self._symbols["<="] = Token(kind, "<=")
-        self._symbols["=="] = Token(kind, "==")
-        self._symbols["!="] = Token(kind, "!=")
+        self._symbols = DEFAULT_SYMBOL_TABLE
 
     def _advance(self):
-        self.pos += 1
-        self._set_current_char()
+        self._get_next_char()
 
-    def _recede(self):
-        self.pos -= 1
-        self._set_current_char()
-    
-    def _set_current_char(self):
-        if self.pos > len(self.text) - 1:
-            self.current_char = None
-        else:
-            self.current_char = self.text[self.pos]
-
-    def _peek(self, n: int=1):
-        num = self.pos + n
-        if num > len(self.text) - 1:
-            return None
-        return self.text[num]
+    def _peek(self, n: int = 1):
+        return self._alllines[self._line_index][self._char_index + 1]
 
     def _skip_whitespace(self):
         while self.current_char is not None \
@@ -129,15 +159,16 @@ class Lexer:
 
     def _skip_comment_block(self):
         while self.current_char is not None:
-            if self.current_char == "*" and self._peek() == "/": break
+            if self.current_char == "*" and self._peek() == "/":
+                break
             self._advance()
-    
+
     def _identifier(self):
         identifier: str = ""
         while self.current_char is not None \
-            and (self.current_char.isalpha() \
-            or self.current_char.isdigit() \
-            or self.current_char == '_'):
+            and (self.current_char.isalpha()
+                 or self.current_char.isdigit()
+                 or self.current_char == '_'):
 
             identifier += self.current_char
             self._advance()
@@ -147,7 +178,7 @@ class Lexer:
     def _num(self):
         num: str = ""
         while self.current_char is not None and \
-            (self.current_char.isdigit() or self.current_char == "."):
+                (self.current_char.isdigit() or self.current_char == "."):
             num += self.current_char
             self._advance()
         assert num.isnumeric()
@@ -156,11 +187,12 @@ class Lexer:
     def _logistic_symbol(self):
         symbol: str = ""
         while self.current_char is not None \
-            and self.current_char in VALID_SINGLE_SYMBOL:
+                and self.current_char in VALID_SINGLE_SYMBOL:
             symbol += self.current_char
             self._advance()
         token = self._symbols.get(symbol)
-        if not token: self.error()
+        if not token:
+            self.error("symbol error")
         return token
 
     def _string(self):
@@ -171,7 +203,9 @@ class Lexer:
             if char != '"':
                 string += char
                 self._advance()
-            else: break
+            else:
+                break
+        self._advance()
         return Token(TokenType.STRING, string)
 
     def _char(self):
@@ -180,7 +214,8 @@ class Lexer:
         if char != '\\' or char != '\'':
             char += self.current_char
             self._advance()
-        else: self.error()
+        else:
+            self.error()
         return Token(TokenType.CHAR, char)
 
     def get_next_token(self) -> Token:
@@ -191,10 +226,10 @@ class Lexer:
                 self._skip_whitespace()
                 continue
 
-            if char.isalpha(): # 字符
+            if char.isalpha():  # 字符
                 return self._identifier()
 
-            if char.isdigit(): # 数字
+            if char.isdigit():  # 数字
                 return self._num()
 
             # comment
@@ -213,7 +248,7 @@ class Lexer:
 
             if char == '"':
                 return self._string()
-            
+
             if char == '\'':
                 return self._char()
 
