@@ -80,3 +80,17 @@ class test_lexer(unittest.TestCase):
             token = lexer.get_next_token()
             self.assertEqual(token.kind, e[1])
             self.assertEqual(token.value, e[0])
+
+    def test_token_line(self):
+        filename = 'TestsJack/testTokenLine.jack'
+        lexer = self.make_lexer(filename)
+        expects = [
+            ("a", TokenType.ID, 2),
+            ("k", TokenType.ID, 4),
+            ("d", TokenType.ID, 6),
+        ]
+        for e in expects:
+            token = lexer.get_next_token()
+            self.assertEqual(token.kind, e[1])
+            self.assertEqual(token.value, e[0])
+            self.assertEqual(token.row, e[2])

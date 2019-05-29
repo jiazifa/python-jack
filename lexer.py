@@ -19,15 +19,18 @@ class TokenType(Enum):
 class Token:
     kind: TokenType
     value: str
+    row: int
 
-    def __init__(self, kind: TokenType, value: any):
+    def __init__(self, kind: TokenType, value: str, row: int=-1):
         self.kind = kind
         self.value = value
+        self.row = row
 
     def __str__(self):
-        return 'Token({type}, {value})'.format(
+        return 'Token({type}, {value}, {row})'.format(
             type=self.type,
-            value=repr(self.val)
+            value=repr(self.val),
+            row=str(self.row)
         )
 
     def __repr__(self):
@@ -75,7 +78,6 @@ DEFAULT_SYMBOL_TABLE = {
     "<": Token(TokenType.SYMBOL, "<"),
     ">": Token(TokenType.SYMBOL, ">"),
     "=": Token(TokenType.SYMBOL, "="),
-
     ">=": Token(TokenType.SYMBOL, ">="),
     "<=": Token(TokenType.SYMBOL, "<="),
     "==": Token(TokenType.SYMBOL, "=="),
@@ -126,6 +128,7 @@ class Lexer:
         self._line_index += 1
         if self._line_index >= self._linecount:
             return None
+        print("line: " + str(self._line_readable()) + "; content: " + self._alllines[self._line_index])
         return self._alllines[self._line_index]
 
     def error(self, content: str = ""):
@@ -169,10 +172,10 @@ class Lexer:
             and (self.current_char.isalpha()
                  or self.current_char.isdigit()
                  or self.current_char == '_'):
-
             identifier += self.current_char
             self._advance()
         idf = self._keywords.get(identifier) or Token(TokenType.ID, identifier)
+        idf.row = self._line_readable()
         return idf
 
     def _num(self):
@@ -182,7 +185,7 @@ class Lexer:
             num += self.current_char
             self._advance()
         assert num.isnumeric()
-        return Token(TokenType.INT, num)
+        return Token(TokenType.INT, num, self._line_readable())
 
     def _logistic_symbol(self):
         symbol: str = ""
@@ -193,6 +196,7 @@ class Lexer:
         token = self._symbols.get(symbol)
         if not token:
             self.error("symbol error")
+        token.row = self._line_readable()
         return token
 
     def _string(self):
@@ -206,7 +210,7 @@ class Lexer:
             else:
                 break
         self._advance()
-        return Token(TokenType.STRING, string)
+        return Token(TokenType.STRING, string, self._line_readable())
 
     def _char(self):
         char: str = ""
@@ -216,7 +220,7 @@ class Lexer:
             self._advance()
         else:
             self.error()
-        return Token(TokenType.CHAR, char)
+        return Token(TokenType.CHAR, char, self._line_readable())
 
     def get_next_token(self) -> Token:
         while self.current_char is not None:
@@ -252,6 +256,9 @@ class Lexer:
             if char == '\'':
                 return self._char()
 
-            return Token(TokenType.ENDOFFILE, None)
+            return Token(TokenType.ENDOFFILE, None, self._line_index)
 
-        return Token(TokenType.ERROR, None)
+        return Token(TokenType.ERROR, None, self._line_index)
+
+    def _line_readable(self):
+        return self._line_index + 1
