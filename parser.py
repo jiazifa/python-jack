@@ -94,9 +94,3 @@ class Parser:
                 node = INTExprAST(token)    
             return node
         return EmptyExprAST()
-
-if __name__ == "__main__":
-    filename = 'TestsJack/testParseExpr.jack'
-    parse = Parser([filename])
-    binary: ExprAST = parse.expr()
-    print(binary)
