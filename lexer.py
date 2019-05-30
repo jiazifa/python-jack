@@ -6,14 +6,14 @@ from utils import VALID_SINGLE_SYMBOL
 class TokenType(Enum):
     KEY_WORDS = 1,
     ID = 2,       # 标识符
-    INT = 3,      # 整型数字
+    INT = 3,      # 数字
     BOOL = 4,     # 布尔类型
     CHAR = 5,     # 字符
     STRING = 6,   # 字符串
     SYMBOL = 7,   # 合法的符号
     NONE = 8,     # 无类型
-    ERROR = 9,    # 错误
-    ENDOFFILE = 10  # 文件结束
+    ERROR = 100,    # 错误
+    ENDOFFILE = 1000  # 文件结束
 
 
 class Token:
@@ -21,15 +21,15 @@ class Token:
     value: str
     row: int
 
-    def __init__(self, kind: TokenType, value: str, row: int=-1):
+    def __init__(self, kind: TokenType, value: str, row: int = -1):
         self.kind = kind
         self.value = value
         self.row = row
 
     def __str__(self):
-        return 'Token({type}, {value}, {row})'.format(
-            type=self.type,
-            value=repr(self.val),
+        return 'Token({kind}, {value}, {row})'.format(
+            kind=self.kind,
+            value=repr(self.value),
             row=str(self.row)
         )
 
@@ -49,13 +49,15 @@ DEFAULT_KEY_WORDS = {
     "char": Token(TokenType.KEY_WORDS, "char"),
     "boolean": Token(TokenType.KEY_WORDS, "boolean"),
     "void": Token(TokenType.KEY_WORDS, "void"),
-    "true": Token(TokenType.KEY_WORDS, "true"),
-    "false": Token(TokenType.KEY_WORDS, "false"),
+
     "this": Token(TokenType.KEY_WORDS, "this"),
     "if": Token(TokenType.KEY_WORDS, "if"),
     "else": Token(TokenType.KEY_WORDS, "else"),
     "while": Token(TokenType.KEY_WORDS, "while"),
     "return": Token(TokenType.KEY_WORDS, "return"),
+
+    "true": Token(TokenType.BOOL, "true"),
+    "false": Token(TokenType.BOOL, "false"),
 }
 
 DEFAULT_SYMBOL_TABLE = {
@@ -91,49 +93,25 @@ class Lexer:
     current_char: str
 
     filename: str
-    _alllines: list  # 所有行
-    _linecount: int  # 行数
+    _text: str  # 所有行
+    _position: int  # cursor
     _line_index: int  # 最近一行
-    _char_index: int  # 字符索引
-    _indexpath: (int, int)  # 字符索引
 
     def __init__(self, filename: str):
         self.filename = filename
         with open(filename, 'r') as f:
-            self._alllines = f.readlines()
-            self._linecount = len(self._alllines)
+            self._text = f.read()
 
-        self._line_index = 0
-        self._char_index = 0
-        self._indexpath = (0, 0)
-        self.current_char = self._alllines[self._line_index][self._char_index]
+        self._line_index = 1
+        self._position = 0
+        self.current_char = self._text[self._position]
 
         self._setupkeywords()
         self._setupsymbols()
 
-    def _get_next_char(self):
-        current_line = self._alllines[self._line_index]
-        if self._char_index >= len(current_line):
-            current_line = self._get_next_line()
-            self._char_index = -1
-        if not current_line:
-            return None
-        self._char_index += 1
-        if self._char_index >= len(current_line):
-            return None
-        self.current_char = current_line[self._char_index]
-
-    def _get_next_line(self):
-        self._char_index = 0
-        self._line_index += 1
-        if self._line_index >= self._linecount:
-            return None
-        print("line: " + str(self._line_readable()) + "; content: " + self._alllines[self._line_index])
-        return self._alllines[self._line_index]
-
     def error(self, content: str = ""):
-        content: str = "Invalid character" + "line: " + \
-            str(self._line_index) + "char" + str(self._char_index) + content
+        content: str = "Invalid character " + "line: " + \
+            str(self._line_index) + " " + content + " : " + self.current_char
         raise Exception(content)
 
     def _setupkeywords(self):
@@ -143,10 +121,16 @@ class Lexer:
         self._symbols = DEFAULT_SYMBOL_TABLE
 
     def _advance(self):
-        self._get_next_char()
+        self._position += 1
+        if self._position >= len(self._text):
+            self.current_char = None
+            return
+        self.current_char = self._text[self._position]
+        if self.current_char == '\n':
+            self._line_index += 1
 
     def _peek(self, n: int = 1):
-        return self._alllines[self._line_index][self._char_index + 1]
+        return self._text[self._position + n]
 
     def _skip_whitespace(self):
         while self.current_char is not None \
@@ -184,7 +168,7 @@ class Lexer:
                 (self.current_char.isdigit() or self.current_char == "."):
             num += self.current_char
             self._advance()
-        assert num.isnumeric()
+        assert num.replace(".", "").isnumeric()
         return Token(TokenType.INT, num, self._line_readable())
 
     def _logistic_symbol(self):
@@ -194,6 +178,7 @@ class Lexer:
             symbol += self.current_char
             self._advance()
         token = self._symbols.get(symbol)
+        print(symbol)
         if not token:
             self.error("symbol error")
         token.row = self._line_readable()
@@ -248,6 +233,9 @@ class Lexer:
 
             # 符号
             if char in VALID_SINGLE_SYMBOL:
+                if char in ['(', ')']: 
+                    self._advance()
+                    return Token(TokenType.SYMBOL, char, self._line_readable())
                 return self._logistic_symbol()
 
             if char == '"':
@@ -258,7 +246,7 @@ class Lexer:
 
             return Token(TokenType.ENDOFFILE, None, self._line_index)
 
-        return Token(TokenType.ERROR, None, self._line_index)
+        return Token(TokenType.ENDOFFILE, None, self._line_index)
 
     def _line_readable(self):
-        return self._line_index + 1
+        return self._line_index

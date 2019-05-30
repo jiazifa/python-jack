@@ -1,11 +1,17 @@
 import unittest
 from lexer import Lexer, TokenType, Token
+from parser import Parser
+from exprAST import ExprAST, UnaryOpAST, BinaryExprAST, \
+    INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST
 
 
 class test_lexer(unittest.TestCase):
 
     def make_lexer(self, filename: str):
         return Lexer(filename)
+
+    def make_parse(self, filenames: list):
+        return Parser(filenames)
 
     def test_token_id(self):
         filename = 'TestsJack/testTokenId.jack'
@@ -17,6 +23,7 @@ class test_lexer(unittest.TestCase):
         ]
         for e in expects:
             token = lexer.get_next_token()
+            print(token)
             self.assertEqual(token.kind, e[1])
             self.assertEqual(token.value, e[0])
 
@@ -34,8 +41,8 @@ class test_lexer(unittest.TestCase):
             ("char", TokenType.KEY_WORDS),
             ("boolean", TokenType.KEY_WORDS),
             ("void", TokenType.KEY_WORDS),
-            ("true", TokenType.KEY_WORDS),
-            ("false", TokenType.KEY_WORDS),
+            ("true", TokenType.BOOL),
+            ("false", TokenType.BOOL),
             ("this", TokenType.KEY_WORDS),
             ("if", TokenType.KEY_WORDS),
             ("else", TokenType.KEY_WORDS),
@@ -94,3 +101,9 @@ class test_lexer(unittest.TestCase):
             self.assertEqual(token.kind, e[1])
             self.assertEqual(token.value, e[0])
             self.assertEqual(token.row, e[2])
+    
+    def test_parse_expr(self):
+        filename = 'TestsJack/testParseExpr.jack'
+        parse = self.make_parse([filename])
+        binary: ExprAST = parse.expr()
+        self.assertEqual(type(binary), BinaryExprAST)
