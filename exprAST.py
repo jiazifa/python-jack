@@ -44,6 +44,12 @@ class BinaryExprAST(ExprAST):
         self.lhs = lhs
         self.rhs = rhs
 
+    def __str__(self):
+        return "BinaryExprAST({lhs}, {op}, {rhs})".format(
+            lhs=self.lhs,
+            op=self.op,
+            rhs=self.rhs
+        )
 
 class INTExprAST(ExprAST):
     value: int = 0

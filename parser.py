@@ -23,9 +23,10 @@ class Parser:
         self._current_filename = self._lexer.filename
         self._current_token = self._lexer.get_next_token()
 
-    def _eat(self, t: TokenType):
+    def _eat(self, t: TokenType, contains: list=[]):
         print(t, self._current_token)
         assert self._current_token.kind == t
+        if len(contains) > 0: assert self._current_token.value in contains
         self._current_token = self._lexer.get_next_token()
 
     def _get_full_name(self, name: str) -> str:
@@ -49,25 +50,21 @@ class Parser:
         expr : term ((PLUS | MINUS) term)*
         """
         node = self.term()
-        token = self._current_token
-        while token.kind == TokenType.SYMBOL and token.value in ["+", "-"]:
-            op = token
-            first = node
-            self._eat(TokenType.SYMBOL)
-            node = BinaryExprAST(op, first, self.term())
+        while self._current_token.kind == TokenType.SYMBOL and self._current_token.value in ["+", "-"]:
+            op = self._current_token
+            self._eat(TokenType.SYMBOL, ["+", "-"])
+            node = BinaryExprAST(op, node, self.term())
         return node
 
     def term(self) -> ExprAST:
         """
         term: factor ((MUL | DIV) factor) *
         """
-        node = self.factor()
-        token = self._current_token
-        while token.kind == TokenType.SYMBOL and token.value in ["*", "/"]:
-            op = token
-            self._eat(op.kind)
-            node = BinaryExprAST(op, node, self.factor())
-        return node
+        op = self.factor()
+        while self._current_token.kind == TokenType.SYMBOL and self._current_token.value in ["*", "/"]:
+            self._eat(TokenType.STRING, ["*", "/"])
+            op = BinaryExprAST(self._current_token, op, self.factor())
+        return op
 
     def factor(self) -> ExprAST:
         """factor : PLUS factor
@@ -80,13 +77,13 @@ class Parser:
         token = self._current_token
         if token.kind == TokenType.SYMBOL:
             if token.value in ["-", "+"]:
-                self._eat(TokenType.SYMBOL)
+                self._eat(TokenType.SYMBOL, ["-", "+"])
                 node = UnaryOpAST(token, self.factor())
                 return node
             elif token.value == "(":
-                self._eat(TokenType.SYMBOL)
+                self._eat(TokenType.SYMBOL, ["("])
                 node = self.expr()
-                self._eat(TokenType.SYMBOL)
+                self._eat(TokenType.SYMBOL, [")"])
                 return node
         elif token.kind == TokenType.INT:
             if "." in token.value:
