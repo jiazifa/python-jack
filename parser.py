@@ -2,7 +2,7 @@ from enum import Enum
 from lexer import Token, TokenType, Lexer
 from error import syntax_error, class_diff_filename
 from exprAST import ExprAST, UnaryOpAST, BinaryExprAST, \
-    INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST, ClassExprAST
+    INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST, ClassExprAST, FunctionExprAST
 
 
 class Parser:
@@ -55,8 +55,9 @@ class Parser:
         self._eat(TokenType.ID)
         self._eat(TokenType.SYMBOL, ['{'])
         variables = self._parse_variable_declarations()
+        functions = self._parse_function_list()
 
-        classExpr = ClassExprAST(name, variables)
+        classExpr = ClassExprAST(name, variables, functions)
         self._eat(TokenType.SYMBOL, ["}"])
         return classExpr
 
@@ -91,10 +92,46 @@ class Parser:
             syntax_error(self._current_filename, "identifier", self._current_token)
 
     def _parse_function_list(self):
-        pass
+        valid = ["function"]
+        functions = []
+        while self._current_token.value in valid:
+            function = self._parse_function()
+            functions.append(function)
+        return functions
 
     def _parse_function(self):
-        pass
+        valid = ["function"]
+        self._eat(TokenType.KEY_WORDS, valid)
+        return_type = self._current_token
+        self._eat(TokenType.KEY_WORDS, [return_type.value])
+        name = self._current_token
+        self._eat(TokenType.ID, [name.value])
+        variables = self._parse_function_var_decs()
+        self._eat(TokenType.SYMBOL, ["{"])
+        # body
+        self._eat(TokenType.SYMBOL, ["}"])
+        return FunctionExprAST(name.value, return_type, variables, [])
+
+    def _parse_function_var_decs(self) -> list:
+        variables = []
+        self._eat(TokenType.SYMBOL, ["("])
+        # variables
+        while self._current_token.kind == TokenType.KEY_WORDS:
+            variable = self._parse_function_var_dec()
+            variables.append(variable)
+        self._eat(TokenType.SYMBOL, [")"])
+        return variables
+
+    def _parse_function_var_dec(self) -> VariableExprAST:
+        var_type = self._current_token
+        self._eat(TokenType.KEY_WORDS, [var_type.value])
+        var = self._current_token
+        self._eat(TokenType.ID, [var.value])
+        value = None
+        if self._current_token.kind == TokenType.SYMBOL and self._current_token.value == "=":
+            self._eat(TokenType.SYMBOL, ["="])
+            value = self._current_token
+        return VariableExprAST("", var_type.value, var, value)
 
     def expr(self) -> ExprAST:
         """

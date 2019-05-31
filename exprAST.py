@@ -117,17 +117,40 @@ class VariableExprAST(ExprAST):
         )
 
 
+class FunctionExprAST(ExprAST):
+    name: str = None
+    return_type: Token
+    _variables: list = []
+    statements: list = []
+
+    def __init__(self, name: str, return_type: Token, variables: list, statements: list):
+        self.name = name
+        self.return_type = return_type
+        self._variables = variables
+        self.statements = statements
+
+    def __str__(self):
+        return "FunctionExprAST({name}, {return_type}, {variables})".format(
+            name=self.name,
+            return_type=self.return_type,
+            variables=self._variables,
+        )
+
+
 class ClassExprAST(ExprAST):
     name: str = None
     _variables: list = []
+    _functions: list = []
 
-    def __init__(self, name: Token, variables: list):
+    def __init__(self, name: Token, variables: list, functions: list):
         self.name = name.value
         assert name.kind == TokenType.ID
         self._variables = variables
+        self._functions = functions
 
     def __str__(self):
-        return "ClassExprAST({name}, {variables})".format(
+        return "ClassExprAST({name}, {variables}, {functions})".format(
             name=self.name, 
-            variables=self._variables
+            variables=self._variables,
+            functions=self._functions
             )
