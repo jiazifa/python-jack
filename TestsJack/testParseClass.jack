@@ -4,5 +4,10 @@ class Test {
 
     function void work(int index) {
         index = 55;
+        this.say();
+    }
+
+    function void say() {
+
     }
 }

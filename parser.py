@@ -161,6 +161,9 @@ class Parser:
         right = self.expr()
         return AssignExprAST(op, left, right)
 
+    def _parse_call_statement(self) -> ExprAST:
+        pass
+
     def expr(self) -> ExprAST:
         """
         expr : term ((PLUS | MINUS) term)*
