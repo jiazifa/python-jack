@@ -2,7 +2,8 @@ from enum import Enum
 from lexer import Token, TokenType, Lexer
 from error import syntax_error, class_diff_filename
 from exprAST import ExprAST, UnaryOpAST, BinaryExprAST, \
-    INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST
+    INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST, ClassExprAST
+
 
 class Parser:
     _filenames: list
@@ -23,10 +24,13 @@ class Parser:
         self._current_filename = self._lexer.filename
         self._current_token = self._lexer.get_next_token()
 
-    def _eat(self, t: TokenType, contains: list=[]):
+    def _eat(self, t: TokenType, contains: list = []):
         print(t, self._current_token)
         assert self._current_token.kind == t
-        if len(contains) > 0: assert self._current_token.value in contains
+        if len(contains) > 0:
+            if self._current_token.value not in contains:
+                syntax_error(self._current_filename, "one of {content}".format(
+                    contains), self._current_token)
         self._current_token = self._lexer.get_next_token()
 
     def _get_full_name(self, name: str) -> str:
@@ -44,6 +48,53 @@ class Parser:
         if len(names) > 0:
             names.pop(0)
         return "".join(names)
+
+    def _parse_class(self) -> ClassExprAST:
+        self._eat(TokenType.KEY_WORDS, ['class'])
+        name = self._current_token
+        self._eat(TokenType.ID)
+        self._eat(TokenType.SYMBOL, ['{'])
+        variables = self._parse_variable_declarations()
+
+        classExpr = ClassExprAST(name, variables)
+        self._eat(TokenType.SYMBOL, ["}"])
+        return classExpr
+
+    def _parse_variable_declarations(self) -> list:
+        variables = []
+        valid = ["static", "field"]
+        while self._current_token.value in valid:
+            variable = self._parse_variable_declaration()
+            variables.append(variable)
+        return variables
+
+    def _parse_variable_declaration(self) -> VariableExprAST:
+        valid = ["static", "field"]
+        if self._current_token.kind == TokenType.KEY_WORDS \
+             and self._current_token.value in valid:
+
+            scope = self._current_token.value
+            self._eat(TokenType.KEY_WORDS, valid)
+            kind = self._current_token
+            self._eat(TokenType.KEY_WORDS, ["int", "string", "boolean"])
+            name = self._current_token
+            self._eat(TokenType.ID)
+            value = None
+            if self._current_token.kind == TokenType.SYMBOL\
+                 and self._current_token.value == "=":
+                self._eat(TokenType.SYMBOL)
+                value = self._current_token
+                self._eat(value.kind)
+            self._eat(TokenType.SYMBOL, [";"])
+            return VariableExprAST(scope, kind.value, name, value)
+        else:
+            syntax_error(self._current_filename, "identifier", self._current_token)
+
+    def _parse_function_list(self):
+        pass
+
+    def _parse_function(self):
+        pass
 
     def expr(self) -> ExprAST:
         """
@@ -94,3 +145,9 @@ class Parser:
                 node = INTExprAST(token)    
             return node
         return EmptyExprAST()
+
+if __name__ == "__main__":
+    filename = 'TestsJack/testParseClass.jack'
+    parse = Parser([filename])
+    binary: ExprAST = parse._parse_class()
+    print(binary)

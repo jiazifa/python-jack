@@ -6,6 +6,9 @@ class ExprAST:
     def __repr__(self):
         return self.__str__()
 
+    def __str__(self):
+        raise Exception
+
 
 class EmptyExprAST(ExprAST):
 
@@ -51,6 +54,7 @@ class BinaryExprAST(ExprAST):
             rhs=self.rhs
         )
 
+
 class INTExprAST(ExprAST):
     value: int = 0
 
@@ -68,6 +72,7 @@ class INTExprAST(ExprAST):
             value=self.value
         )
 
+
 class FloatExprAST(ExprAST):
     value: float = 0.0
 
@@ -75,7 +80,7 @@ class FloatExprAST(ExprAST):
         assert token.kind == TokenType.INT
         value = token.value
         self.value = float(value)
-    
+
     def __str__(self):
         """String representation of the class instance.
         Examples:
@@ -85,18 +90,44 @@ class FloatExprAST(ExprAST):
             value=self.value
         )
 
-class VariableExprAST(ExprAST):
-    value: str = None
 
-    def __init__(self, token: Token):
-        assert token.kind == TokenType.ID
-        self.value = token.value
+class VariableExprAST(ExprAST):
+    scope: str = None
+    name: str = None
+    kind: str = None
+    value: Token = None
+
+    def __init__(self, scope: str, kind: str, name: Token, value: Token):
+        assert name.kind == TokenType.ID
+        self.scope = scope
+        self.name = name.value
+        self.kind = kind
+        self.value = value
 
     def __str__(self):
         """String representation of the class instance.
         Examples:
             VariableAST(4)
         """
-        return 'VariableAST({value})'.format(
+        return 'VariableAST({scope}, {kind}, {name}, {value})'.format(
+            scope=self.scope,
+            kind=self.kind,
+            name=self.name,
             value=self.value
         )
+
+
+class ClassExprAST(ExprAST):
+    name: str = None
+    _variables: list = []
+
+    def __init__(self, name: Token, variables: list):
+        self.name = name.value
+        assert name.kind == TokenType.ID
+        self._variables = variables
+
+    def __str__(self):
+        return "ClassExprAST({name}, {variables})".format(
+            name=self.name, 
+            variables=self._variables
+            )

@@ -8,10 +8,9 @@ def error_count() -> int:
 
 
 def syntax_error(filename: str, expected: str, token: Token):
-    error_count += 1
-    print("Error in class" + str(filename) + "in lilne:"
+    print("Error in class" + filename + "in lilne:"
           + token.row + "expect a " + expected
-          + ", but got a " + token.value + "\n")
+          + ", but got a " + str(token.value) + "\n")
 
 
 def class_diff_filename(filename: str):

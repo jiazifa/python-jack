@@ -46,7 +46,7 @@ DEFAULT_KEY_WORDS = {
     "field": Token(TokenType.KEY_WORDS, "field"),
     "static": Token(TokenType.KEY_WORDS, "static"),
     "int": Token(TokenType.KEY_WORDS, "int"),
-    "char": Token(TokenType.KEY_WORDS, "char"),
+    "string": Token(TokenType.KEY_WORDS, "string"),
     "boolean": Token(TokenType.KEY_WORDS, "boolean"),
     "void": Token(TokenType.KEY_WORDS, "void"),
 
@@ -234,6 +234,9 @@ class Lexer:
             # 符号
             if char in VALID_SINGLE_SYMBOL:
                 if char in ['(', ')']: 
+                    self._advance()
+                    return Token(TokenType.SYMBOL, char, self._line_readable())
+                elif char in ['+', '-', '*', '/']:
                     self._advance()
                     return Token(TokenType.SYMBOL, char, self._line_readable())
                 return self._logistic_symbol()
