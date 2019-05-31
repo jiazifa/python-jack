@@ -2,7 +2,7 @@ class Test {
     static int a = 0;
     field string b = "ss";
 
-    function void work(string ch) {
-
+    function void work(int index) {
+        index = 55;
     }
 }

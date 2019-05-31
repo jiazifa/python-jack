@@ -54,6 +54,22 @@ class BinaryExprAST(ExprAST):
             rhs=self.rhs
         )
 
+class AssignExprAST(ExprAST):
+    op: Token = None
+    lhs: ExprAST = EmptyExprAST()
+    rhs: ExprAST = EmptyExprAST()
+
+    def __init__(self, op: Token, lhs: ExprAST, rhs: ExprAST):
+        self.op = op
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def __str__(self):
+        return "AssignExprAST({lhs}, {op}, {rhs})".format(
+            lhs=self.lhs,
+            op=self.op,
+            rhs=self.rhs
+        )
 
 class INTExprAST(ExprAST):
     value: int = 0
@@ -130,10 +146,11 @@ class FunctionExprAST(ExprAST):
         self.statements = statements
 
     def __str__(self):
-        return "FunctionExprAST({name}, {return_type}, {variables})".format(
+        return "FunctionExprAST({name}, {return_type}, {variables}, {statements})".format(
             name=self.name,
             return_type=self.return_type,
             variables=self._variables,
+            statements=self.statements
         )
 
 

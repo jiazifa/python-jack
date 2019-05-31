@@ -1,8 +1,7 @@
 from enum import Enum
 from lexer import Token, TokenType, Lexer
 from error import syntax_error, class_diff_filename
-from exprAST import ExprAST, UnaryOpAST, BinaryExprAST, \
-    INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST, ClassExprAST, FunctionExprAST
+from exprAST import *
 
 
 class Parser:
@@ -72,7 +71,7 @@ class Parser:
     def _parse_variable_declaration(self) -> VariableExprAST:
         valid = ["static", "field"]
         if self._current_token.kind == TokenType.KEY_WORDS \
-             and self._current_token.value in valid:
+                and self._current_token.value in valid:
 
             scope = self._current_token.value
             self._eat(TokenType.KEY_WORDS, valid)
@@ -82,14 +81,15 @@ class Parser:
             self._eat(TokenType.ID)
             value = None
             if self._current_token.kind == TokenType.SYMBOL\
-                 and self._current_token.value == "=":
-                self._eat(TokenType.SYMBOL)
+                    and self._current_token.value == "=":
+                self._eat(TokenType.SYMBOL, ["="])
                 value = self._current_token
                 self._eat(value.kind)
             self._eat(TokenType.SYMBOL, [";"])
             return VariableExprAST(scope, kind.value, name, value)
         else:
-            syntax_error(self._current_filename, "identifier", self._current_token)
+            syntax_error(self._current_filename,
+                         "identifier", self._current_token)
 
     def _parse_function_list(self):
         valid = ["function"]
@@ -107,10 +107,8 @@ class Parser:
         name = self._current_token
         self._eat(TokenType.ID, [name.value])
         variables = self._parse_function_var_decs()
-        self._eat(TokenType.SYMBOL, ["{"])
-        # body
-        self._eat(TokenType.SYMBOL, ["}"])
-        return FunctionExprAST(name.value, return_type, variables, [])
+        statements = self._parse_function_statements()
+        return FunctionExprAST(name.value, return_type, variables, statements)
 
     def _parse_function_var_decs(self) -> list:
         variables = []
@@ -132,6 +130,36 @@ class Parser:
             self._eat(TokenType.SYMBOL, ["="])
             value = self._current_token
         return VariableExprAST("", var_type.value, var, value)
+
+    def _parse_function_statements(self) -> list:
+        statements = []
+        self._eat(TokenType.SYMBOL, ["{"])
+        while self._current_token.value is not "}":
+            statement = self._parse_statement()
+            statements.append(statement)
+        self._eat(TokenType.SYMBOL, ["}"])
+        return statements
+
+    def _parse_statement(self) -> ExprAST:
+        token = self._current_token
+        statement = EmptyExprAST()
+        if token.kind == TokenType.ID:
+            left = token
+            self._eat(token.kind, [token.value])
+            op = self._current_token
+            self._eat(op.kind, [op.value])
+            right = self.expr()
+            statement = AssignExprAST(op, left, right)
+        self._eat(TokenType.SYMBOL, [";"])
+        return statement
+
+
+    def _parse_assignment_statement(self) -> AssignExprAST:
+        left = VariableExprAST("", "", self._current_token, None)
+        self._eat(TokenType.ID, [self._current_token.value])
+        op = self._current_token
+        right = self.expr()
+        return AssignExprAST(op, left, right)
 
     def expr(self) -> ExprAST:
         """
@@ -179,9 +207,10 @@ class Parser:
                 node = FloatExprAST(token)
             else:
                 self._eat(token.kind)
-                node = INTExprAST(token)    
+                node = INTExprAST(token)
             return node
         return EmptyExprAST()
+
 
 if __name__ == "__main__":
     filename = 'TestsJack/testParseClass.jack'
