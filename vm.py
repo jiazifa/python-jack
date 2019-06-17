@@ -7,7 +7,7 @@ class VMBase:
     _that: int = 0
     ip: int  # 指令索引
     _current_instrument = []
-    _temp: [int] = []  # 储存临时值
+    _temp = None  # 储存临时值
 
     _ram: [int] = []
 
