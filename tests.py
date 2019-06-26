@@ -2,7 +2,7 @@ import unittest
 from lexer import Lexer, TokenType, Token
 from parser import Parser
 from exprAST import ExprAST, UnaryOpAST, BinaryExprAST, \
-    INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST
+    INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST, ClassExprAST
 
 
 class test_lexer(unittest.TestCase):
@@ -51,8 +51,8 @@ class test_lexer(unittest.TestCase):
         ]
         for e in expects:
             token = lexer.get_next_token()
-            self.assertEqual(token.kind, e[1])
             self.assertEqual(token.value, e[0])
+            self.assertEqual(token.kind, e[1])
 
     def test_token_symbols(self):
         filename = 'TestsJack/testTokenSymbols.jack'
@@ -107,3 +107,9 @@ class test_lexer(unittest.TestCase):
         parse = self.make_parse([filename])
         binary: ExprAST = parse.expr()
         self.assertEqual(type(binary), BinaryExprAST)
+
+    def test_parse_class(self):
+        filename = 'TestsJack/testParseClass.jack'
+        parse = self.make_parse([filename])
+        ast: ClassExprAST = parse._parse_class()
+        self.assertEqual(type(ast), ClassExprAST)

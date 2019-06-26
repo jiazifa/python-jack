@@ -15,6 +15,9 @@ class EmptyExprAST(ExprAST):
     def __init__(self):
         pass
 
+    def __str__(self):
+        return "EmptyExprAST()"
+
 
 class UnaryOpAST(ExprAST):
     """ 一元运算符 """
@@ -170,4 +173,21 @@ class ClassExprAST(ExprAST):
             name=self.name, 
             variables=self._variables,
             functions=self._functions
+            )
+
+class CallExprAST(ExprAST):
+    target: str = None
+    args: list = []
+    kwargs: dict = {}
+
+    def __init__(self, target: str, args: list, kwargs: dict):
+        self.target = target
+        self.args = args
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return "CallExprAST({target}, {args}, {kwargs})".format(
+            target=self.target, 
+            args=self.args,
+            kwargs=self.kwargs
             )

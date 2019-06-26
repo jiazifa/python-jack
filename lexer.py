@@ -15,7 +15,6 @@ class TokenType(Enum):
     ERROR = 100,    # 错误
     ENDOFFILE = 1000  # 文件结束
 
-
 class Token:
     kind: TokenType
     value: str
@@ -39,7 +38,6 @@ class Token:
 
 DEFAULT_KEY_WORDS = {
     "class": Token(TokenType.KEY_WORDS, "class"),
-    "class": Token(TokenType.KEY_WORDS, "class"),
     "constructor": Token(TokenType.KEY_WORDS, "constructor"),
     "function": Token(TokenType.KEY_WORDS, "function"),
     "method": Token(TokenType.KEY_WORDS, "method"),
@@ -49,6 +47,7 @@ DEFAULT_KEY_WORDS = {
     "string": Token(TokenType.KEY_WORDS, "string"),
     "boolean": Token(TokenType.KEY_WORDS, "boolean"),
     "void": Token(TokenType.KEY_WORDS, "void"),
+    "char": Token(TokenType.KEY_WORDS, "char"),
 
     "this": Token(TokenType.KEY_WORDS, "this"),
     "if": Token(TokenType.KEY_WORDS, "if"),
@@ -105,6 +104,7 @@ class Lexer:
         self._line_index = 1
         self._position = 0
         self.current_char = self._text[self._position]
+        self._pool = []
 
         self._setupkeywords()
         self._setupsymbols()
@@ -129,9 +129,9 @@ class Lexer:
         if self.current_char == '\n':
             self._line_index += 1
 
-    def _peek(self, n: int = 1):
+    def peek(self, n: int = 1) -> str:
         return self._text[self._position + n]
-
+    
     def _skip_whitespace(self):
         while self.current_char is not None \
                 and self.current_char.isspace():
@@ -146,7 +146,7 @@ class Lexer:
 
     def _skip_comment_block(self):
         while self.current_char is not None:
-            if self.current_char == "*" and self._peek() == "/":
+            if self.current_char == "*" and self.peek() == "/":
                 break
             self._advance()
 
@@ -226,9 +226,9 @@ class Lexer:
                 self._skip_single_line_comment()
 
             if char == "/":
-                if self._peek() == "/":
+                if self.peek() == "/":
                     self._skip_single_line_comment()
-                elif self._peek() == "*":
+                elif self.peek() == "*":
                     self._skip_comment_block()
 
             # 符号

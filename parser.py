@@ -24,13 +24,17 @@ class Parser:
         self._current_token = self._lexer.get_next_token()
 
     def _eat(self, t: TokenType, contains: list = []):
-        print(t, self._current_token)
+        print("on eat " + str(t) + " cpmpare with current " + str(self._current_token))
         assert self._current_token.kind == t
         if len(contains) > 0:
             if self._current_token.value not in contains:
                 syntax_error(self._current_filename, "one of {content}".format(
                     contains), self._current_token)
         self._current_token = self._lexer.get_next_token()
+
+    def _peek(self, n: int = 1) -> str:
+        peeked: str = self._lexer.peek(n)
+        return peeked
 
     def _get_full_name(self, name: str) -> str:
         fullname = str(self._current_filename) + "." + str(name)
@@ -141,28 +145,70 @@ class Parser:
         return statements
 
     def _parse_statement(self) -> ExprAST:
+        """
+        statement -> assign_statement
+               | if_statement
+               | while_statement
+               | return_statement
+               | call_statement ;
+        """
         token = self._current_token
         statement = EmptyExprAST()
-        if token.kind == TokenType.ID:
-            left = token
-            self._eat(token.kind, [token.value])
-            op = self._current_token
-            self._eat(op.kind, [op.value])
-            right = self.expr()
-            statement = AssignExprAST(op, left, right)
+        if token.kind == TokenType.ID and self._peek() == "=":
+            # assign_statement
+            statement = self._parse_assignment_statement()
+        elif token.kind == TokenType.ID and (self._peek() == "." or self._peek() == "("):
+            # call_statement
+            statement = self._parse_call_statement()
+        elif token.kind == TokenType.KEY_WORDS and token.value == "return":
+            statement = self._parse_return_statement()
+        elif token.kind == TokenType.KEY_WORDS and token.value == "if":
+            # if_statement
+            statement = self._parse_if_statement()
+        elif token.kind == TokenType.KEY_WORDS and token.value == "while":
+            # while_statement
+            statement = self._parse_while_statement()
         self._eat(TokenType.SYMBOL, [";"])
         return statement
 
+    def _parse_return_statement(self) -> ExprAST:
+        pass
+
+    def _parse_if_statement(self) -> ExprAST:
+        pass
+
+    def _parse_while_statement(self) -> ExprAST:
+        pass
 
     def _parse_assignment_statement(self) -> AssignExprAST:
-        left = VariableExprAST("", "", self._current_token, None)
-        self._eat(TokenType.ID, [self._current_token.value])
+        """
+        assign_statement -> leftValue = expression ; 
+        """
+        token = self._current_token
+        statement = EmptyExprAST()
+        left = token
+        self._eat(token.kind, [token.value])
         op = self._current_token
+        self._eat(op.kind, [op.value])
         right = self.expr()
-        return AssignExprAST(op, left, right)
+        statement = AssignExprAST(op, left, right)
+        return statement
 
-    def _parse_call_statement(self) -> ExprAST:
-        pass
+    def _parse_call_statement(self) -> CallExprAST:
+        token = self._current_token
+        name = token.value
+        args = []
+        kwargs = {}
+        self._eat(token.type)
+        if self._current_token.type == TokenType.SYMBOL and self._current_token.value == ".":
+            self._eat(TokenType.SYMBOL, ["."])
+        elif self._current_token.type == TokenType.SYMBOL and self._current_token.value == "(":
+            self._eat(TokenType.SYMBOL, ["("])
+            while self._current_token.value is not ")" and self._current_token.type is not TokenType.SYMBOL:
+                args.append(self.expr())
+        # logic
+        self._eat(TokenType.SYMBOL, [")"])
+        return CallExprAST(name, args, kwargs)
 
     def expr(self) -> ExprAST:
         """
