@@ -3,7 +3,6 @@ from lexer import Token, TokenType, Lexer
 from error import syntax_error, class_diff_filename
 from exprAST import *
 
-
 class Parser:
     _filenames: list
     _current_filename: str
@@ -11,6 +10,7 @@ class Parser:
     _lexer: Lexer
     _has_return: bool
     _current_token: Token
+    _token_queue: list
 
     def __init__(self, filenames: list):
         self._filenames = filenames
@@ -18,10 +18,28 @@ class Parser:
 
         self._current_filename = None
         self._has_return = False
-
+        self._token_queue = list()
         self._lexer = Lexer(filenames[0])
         self._current_filename = self._lexer.filename
+        self._get_token()
+
+    def _borrow(self) -> Token:
+        self._token_queue.append(self._current_token)
         self._current_token = self._lexer.get_next_token()
+        return self._current_token
+
+    def _repay(self):
+        token = self._current_token
+        self._current_token = self._token_queue.pop(-1)
+        self._token_queue.insert(0, token)
+
+    def _get_token(self):
+        if not self._token_queue:
+            token = self._lexer.get_next_token()
+            self._current_token = token
+        else:
+            token = self._token_queue.pop(0)
+            self._current_token = token
 
     def _eat(self, t: TokenType, contains: list = []):
         print("on eat " + str(t) + " cpmpare with current " + str(self._current_token))
@@ -30,11 +48,7 @@ class Parser:
             if self._current_token.value not in contains:
                 syntax_error(self._current_filename, "one of {content}".format(
                     contains), self._current_token)
-        self._current_token = self._lexer.get_next_token()
-
-    def _peek(self, n: int = 1) -> str:
-        peeked: str = self._lexer.peek(n)
-        return peeked
+        self._get_token()
 
     def _get_full_name(self, name: str) -> str:
         fullname = str(self._current_filename) + "." + str(name)
@@ -154,12 +168,16 @@ class Parser:
         """
         token = self._current_token
         statement = EmptyExprAST()
-        if token.kind == TokenType.ID and self._peek() == "=":
-            # assign_statement
-            statement = self._parse_assignment_statement()
-        elif token.kind == TokenType.ID and (self._peek() == "." or self._peek() == "("):
-            # call_statement
-            statement = self._parse_call_statement()
+        if token.kind == TokenType.ID:
+            borrowed = self._borrow()
+            if borrowed.value == "=":
+                # assign_statement
+                self._repay()
+                statement = self._parse_assignment_statement()
+            elif borrowed.value in ["(", "."]:
+                # call_statement
+                self._repay()
+                statement = self._parse_call_statement()
         elif token.kind == TokenType.KEY_WORDS and token.value == "return":
             statement = self._parse_return_statement()
         elif token.kind == TokenType.KEY_WORDS and token.value == "if":
@@ -199,12 +217,12 @@ class Parser:
         name = token.value
         args = []
         kwargs = {}
-        self._eat(token.type)
-        if self._current_token.type == TokenType.SYMBOL and self._current_token.value == ".":
+        self._eat(token.kind)
+        if self._current_token.kind == TokenType.SYMBOL and self._current_token.value == ".":
             self._eat(TokenType.SYMBOL, ["."])
-        elif self._current_token.type == TokenType.SYMBOL and self._current_token.value == "(":
+        elif self._current_token.kind == TokenType.SYMBOL and self._current_token.value == "(":
             self._eat(TokenType.SYMBOL, ["("])
-            while self._current_token.value is not ")" and self._current_token.type is not TokenType.SYMBOL:
+            while self._current_token.value is not ")" and self._current_token.kind is not TokenType.SYMBOL:
                 args.append(self.expr())
         # logic
         self._eat(TokenType.SYMBOL, [")"])

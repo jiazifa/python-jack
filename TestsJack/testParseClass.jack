@@ -4,6 +4,7 @@ class Test {
 
     function void work(int index) {
         index = 55;
+        say();
     }
 
     function void say() {
