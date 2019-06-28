@@ -8,8 +8,8 @@ def error_count() -> int:
 
 
 def syntax_error(filename: str, expected: str, token: Token):
-    print("Error in class" + filename + "in lilne:"
-          + token.row + "expect a " + expected
+    print("Error in class" + filename + "in line:"
+          + str(token.row) + "expect a " + expected
           + ", but got a " + str(token.value) + "\n")
 
 

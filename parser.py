@@ -47,7 +47,7 @@ class Parser:
         if len(contains) > 0:
             if self._current_token.value not in contains:
                 syntax_error(self._current_filename, "one of {content}".format(
-                    contains), self._current_token)
+                    content=contains), self._current_token)
         self._get_token()
 
     def _get_full_name(self, name: str) -> str:
@@ -189,8 +189,12 @@ class Parser:
         self._eat(TokenType.SYMBOL, [";"])
         return statement
 
-    def _parse_return_statement(self) -> ExprAST:
-        pass
+    def _parse_return_statement(self) -> ReturnExprAST:
+        self._eat(TokenType.KEY_WORDS, ["return"])
+        if self._current_token.kind == TokenType.SYMBOL and self._current_token.value == ";":
+            return ReturnExprAST(EmptyExprAST())
+        else:
+            return ReturnExprAST(self.expr())
 
     def _parse_if_statement(self) -> ExprAST:
         pass

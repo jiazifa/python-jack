@@ -191,3 +191,13 @@ class CallExprAST(ExprAST):
             args=self.args,
             kwargs=self.kwargs
             )
+
+class ReturnExprAST(ExprAST):
+    value: ExprAST
+    def __init__(self, value: ExprAST):
+         self.value = value
+        
+    def __str__(self):
+        return "ReturnExprAST({value})".format(
+            value=self.value
+            )
