@@ -105,7 +105,7 @@ class test_lexer(unittest.TestCase):
     def test_parse_expr(self):
         filename = 'TestsJack/testParseExpr.jack'
         parse = self.make_parse([filename])
-        binary: ExprAST = parse.expr()
+        binary: ExprAST = parse.expression()
         self.assertEqual(type(binary), BinaryExprAST)
 
     def test_parse_class(self):

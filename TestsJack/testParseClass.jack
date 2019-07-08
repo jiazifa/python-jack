@@ -3,12 +3,11 @@ class Test {
     field string b = "ss";
 
     function void work(int index) {
-        index = 55;
+        index = 55+10;
         say();
-        return 11;
     }
 
     function void say() {
-
+        a = index;
     }
 }

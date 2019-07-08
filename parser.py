@@ -24,16 +24,19 @@ class Parser:
         self._get_token()
 
     def _borrow(self) -> Token:
+        """ 向前看一个 Token，将当前的 Token 推入队列中 """
         self._token_queue.append(self._current_token)
         self._current_token = self._lexer.get_next_token()
         return self._current_token
 
     def _repay(self):
+        """ 归还前看的 Token，同时设置当前 Token """
         token = self._current_token
         self._current_token = self._token_queue.pop(-1)
         self._token_queue.insert(0, token)
 
     def _get_token(self):
+        """ 统一管理 Token 的获取，如果存在前看，则优先处理 """
         if not self._token_queue:
             token = self._lexer.get_next_token()
             self._current_token = token
@@ -194,9 +197,10 @@ class Parser:
         if self._current_token.kind == TokenType.SYMBOL and self._current_token.value == ";":
             return ReturnExprAST(EmptyExprAST())
         else:
-            return ReturnExprAST(self.expr())
+            return ReturnExprAST(self.expression())
 
     def _parse_if_statement(self) -> ExprAST:
+        
         pass
 
     def _parse_while_statement(self) -> ExprAST:
@@ -212,7 +216,7 @@ class Parser:
         self._eat(token.kind, [token.value])
         op = self._current_token
         self._eat(op.kind, [op.value])
-        right = self.expr()
+        right = self.expression()
         statement = AssignExprAST(op, left, right)
         return statement
 
@@ -227,14 +231,14 @@ class Parser:
         elif self._current_token.kind == TokenType.SYMBOL and self._current_token.value == "(":
             self._eat(TokenType.SYMBOL, ["("])
             while self._current_token.value is not ")" and self._current_token.kind is not TokenType.SYMBOL:
-                args.append(self.expr())
+                args.append(self.expression())
         # logic
         self._eat(TokenType.SYMBOL, [")"])
         return CallExprAST(name, args, kwargs)
 
-    def expr(self) -> ExprAST:
+    def expression(self) -> ExprAST:
         """
-        expr : term ((PLUS | MINUS) term)*
+        expression : term ((PLUS | MINUS) term)*
         """
         node = self.term()
         while self._current_token.kind == TokenType.SYMBOL and self._current_token.value in ["+", "-"]:
@@ -269,7 +273,7 @@ class Parser:
                 return node
             elif token.value == "(":
                 self._eat(TokenType.SYMBOL, ["("])
-                node = self.expr()
+                node = self.expression()
                 self._eat(TokenType.SYMBOL, [")"])
                 return node
         elif token.kind == TokenType.INT:
@@ -280,6 +284,9 @@ class Parser:
                 self._eat(token.kind)
                 node = INTExprAST(token)
             return node
+        elif token.kind == TokenType.ID:
+            self._eat(token.kind)
+            return VariableExprAST(None, None, token, None)
         return EmptyExprAST()
 
 
