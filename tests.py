@@ -4,6 +4,7 @@ from parser import Parser
 from exprAST import ExprAST, UnaryOpAST, BinaryExprAST, \
     INTExprAST, FloatExprAST, VariableExprAST, EmptyExprAST, ClassExprAST
 
+from symbol import *
 
 class test_lexer(unittest.TestCase):
 
@@ -113,3 +114,11 @@ class test_lexer(unittest.TestCase):
         parse = self.make_parse([filename])
         ast: ClassExprAST = parse._parse_class()
         self.assertEqual(type(ast), ClassExprAST)
+
+    def test_symbol_insert(self):
+        filename = 'TestsJack/testParseClass.jack'
+        parse = self.make_parse([filename])
+        ast: ClassExprAST = parse._parse_class()
+        table: SymbolTable = SymbolTable()
+        table.insertClassTable(ast)
+        self.assertEqual(table._classTable, {})

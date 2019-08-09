@@ -178,7 +178,6 @@ class Lexer:
             symbol += self.current_char
             self._advance()
         token = self._symbols.get(symbol)
-        print(symbol)
         if not token:
             self.error("symbol error")
         token.row = self._line_readable()

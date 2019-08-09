@@ -1,0 +1,13 @@
+class Test {
+    static int a = 0;
+    field string b = "ss";
+
+    function void work(int index) {
+        index = 55+10;
+        say();
+    }
+
+    function void say() {
+        a = index;
+    }
+}

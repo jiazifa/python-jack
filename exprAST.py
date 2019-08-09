@@ -128,7 +128,7 @@ class VariableExprAST(ExprAST):
         Examples:
             VariableAST(4)
         """
-        return 'VariableAST({scope}, {kind}, {name}, {value})'.format(
+        return 'VariableExprAST({scope}, {kind}, {name}, {value})'.format(
             scope=self.scope,
             kind=self.kind,
             name=self.name,

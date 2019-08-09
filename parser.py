@@ -45,7 +45,7 @@ class Parser:
             self._current_token = token
 
     def _eat(self, t: TokenType, contains: list = []):
-        print("on eat " + str(t) + " cpmpare with current " + str(self._current_token))
+        # print("on eat " + str(t) + " cpmpare with current " + str(self._current_token))
         assert self._current_token.kind == t
         if len(contains) > 0:
             if self._current_token.value not in contains:
