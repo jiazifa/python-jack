@@ -16,12 +16,14 @@ class SymbolKind(Enum):
 
 
 class SymbolInfo:
+    _token: Token
     _type: str  # int, float, char, string
     _kind: SymbolKind  # kind : static, field, var, argument
     index: int
     _args: list
 
-    def __init__(self, symbolType: str, kind: SymbolKind, index: int):
+    def __init__(self, token:Token, symbolType: str, kind: SymbolKind, index: int):
+        self._token = token
         self._type = symbolType
         self._kind = kind
         self.index = index

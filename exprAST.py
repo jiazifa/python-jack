@@ -3,6 +3,8 @@ from lexer import Token, TokenType
 
 class ExprAST:
 
+    token: Token = None
+
     def __repr__(self):
         return self.__str__()
 
@@ -46,6 +48,7 @@ class BinaryExprAST(ExprAST):
     rhs: ExprAST = EmptyExprAST()
 
     def __init__(self, op: Token, lhs: ExprAST, rhs: ExprAST):
+        self.token = op
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
@@ -57,12 +60,14 @@ class BinaryExprAST(ExprAST):
             rhs=self.rhs
         )
 
+
 class AssignExprAST(ExprAST):
     op: Token = None
     lhs: ExprAST = EmptyExprAST()
     rhs: ExprAST = EmptyExprAST()
 
     def __init__(self, op: Token, lhs: ExprAST, rhs: ExprAST):
+        self.token = op
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
@@ -74,11 +79,13 @@ class AssignExprAST(ExprAST):
             rhs=self.rhs
         )
 
+
 class INTExprAST(ExprAST):
     value: int = 0
 
     def __init__(self, token: Token):
         assert token.kind == TokenType.INT
+        self.token = token
         value = token.value
         self.value = int(value)
 
@@ -98,6 +105,7 @@ class FloatExprAST(ExprAST):
     def __init__(self, token: Token):
         assert token.kind == TokenType.INT
         value = token.value
+        self.token = token
         self.value = float(value)
 
     def __str__(self):
@@ -118,6 +126,7 @@ class VariableExprAST(ExprAST):
 
     def __init__(self, scope: str, kind: str, name: Token, value: Token):
         assert name.kind == TokenType.ID
+        self.token = value
         self.scope = scope
         self.name = name.value
         self.kind = kind
@@ -142,8 +151,9 @@ class FunctionExprAST(ExprAST):
     _variables: list = []
     statements: list = []
 
-    def __init__(self, name: str, return_type: Token, variables: list, statements: list):
+    def __init__(self, token: Token, name: str, return_type: Token, variables: list, statements: list):
         self.name = name
+        self.token = token
         self.return_type = return_type
         self._variables = variables
         self.statements = statements
@@ -163,6 +173,7 @@ class ClassExprAST(ExprAST):
     _functions: list = []
 
     def __init__(self, name: Token, variables: list, functions: list):
+        self.token = name
         self.name = name.value
         assert name.kind == TokenType.ID
         self._variables = variables
@@ -170,34 +181,39 @@ class ClassExprAST(ExprAST):
 
     def __str__(self):
         return "ClassExprAST({name}, {variables}, {functions})".format(
-            name=self.name, 
+            name=self.name,
             variables=self._variables,
             functions=self._functions
-            )
+        )
+
 
 class CallExprAST(ExprAST):
     target: str = None
     args: list = []
     kwargs: dict = {}
 
-    def __init__(self, target: str, args: list, kwargs: dict):
+    def __init__(self, token: Token, target: str, args: list, kwargs: dict):
+        self.token = token
         self.target = target
         self.args = args
         self.kwargs = kwargs
 
     def __str__(self):
         return "CallExprAST({target}, {args}, {kwargs})".format(
-            target=self.target, 
+            target=self.target,
             args=self.args,
             kwargs=self.kwargs
-            )
+        )
+
 
 class ReturnExprAST(ExprAST):
     value: ExprAST
-    def __init__(self, value: ExprAST):
-         self.value = value
-        
+
+    def __init__(self, token: Token, value: ExprAST):
+        self.token = token
+        self.value = value
+
     def __str__(self):
         return "ReturnExprAST({value})".format(
             value=self.value
-            )
+        )

@@ -118,7 +118,7 @@ class test_lexer(unittest.TestCase):
     def test_symbol_insert(self):
         filename = 'TestsJack/testParseClass.jack'
         parse = self.make_parse([filename])
-        ast: ClassExprAST = parse._parse_class()
-        table: SymbolTable = SymbolTable()
-        table.insertClassTable(ast)
+        # ast: ClassExprAST = parse._parse_class()
+        table: SymbolTable = SymbolTable(parse)
+        # table.insertClassTable(ast)
         self.assertEqual(table._classTable, {})

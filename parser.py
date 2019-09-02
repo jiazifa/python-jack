@@ -120,7 +120,7 @@ class Parser:
             functions.append(function)
         return functions
 
-    def _parse_function(self):
+    def _parse_function(self) -> FunctionExprAST:
         valid = ["function"]
         self._eat(TokenType.KEY_WORDS, valid)
         return_type = self._current_token
@@ -129,7 +129,7 @@ class Parser:
         self._eat(TokenType.ID, [name.value])
         variables = self._parse_function_var_decs()
         statements = self._parse_function_statements()
-        return FunctionExprAST(name.value, return_type, variables, statements)
+        return FunctionExprAST(name, name.value, return_type, variables, statements)
 
     def _parse_function_var_decs(self) -> list:
         variables = []
@@ -195,9 +195,9 @@ class Parser:
     def _parse_return_statement(self) -> ReturnExprAST:
         self._eat(TokenType.KEY_WORDS, ["return"])
         if self._current_token.kind == TokenType.SYMBOL and self._current_token.value == ";":
-            return ReturnExprAST(EmptyExprAST())
+            return ReturnExprAST(self._current_token, EmptyExprAST())
         else:
-            return ReturnExprAST(self.expression())
+            return ReturnExprAST(self._current_token, self.expression())
 
     def _parse_if_statement(self) -> ExprAST:
         
@@ -234,7 +234,7 @@ class Parser:
                 args.append(self.expression())
         # logic
         self._eat(TokenType.SYMBOL, [")"])
-        return CallExprAST(name, args, kwargs)
+        return CallExprAST(token, name, args, kwargs)
 
     def expression(self) -> ExprAST:
         """
