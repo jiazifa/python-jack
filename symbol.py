@@ -83,11 +83,11 @@ class SymbolTable:
                     var: VariableExprAST = var
                     info: SymbolInfo
                     if var.scope == "field":
-                        info = SymbolInfo(var.kind, SymbolKind.FIELD,
+                        info = SymbolInfo(var.token, var.kind, SymbolKind.FIELD,
                                           self._field_index)
                         self._field_index += 1
                     elif var.scope == "static":
-                        info = SymbolInfo(var.kind, SymbolKind.STATIC,
+                        info = SymbolInfo(var.token, var.kind, SymbolKind.STATIC,
                                           self._static_index)
                         self._static_index += 1
                     print(temp)
@@ -99,7 +99,7 @@ class SymbolTable:
             for func in expr._functions:
                 func: FunctionExprAST = func
                 info: SymbolInfo
-                info = SymbolInfo("function", SymbolKind.FUNCTION, len(self._subroutineTable))
+                info = SymbolInfo(func.token, "function", SymbolKind.FUNCTION, len(self._subroutineTable))
                 for arg in func._variables:
                     arg: VariableExprAST = arg
                     info._args.append(arg.kind)
