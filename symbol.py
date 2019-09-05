@@ -2,7 +2,7 @@ from enum import Enum
 from exprAST import *
 from parser import *
 from error import *
-
+import pysnooper
 
 class SymbolKind(Enum):
     STATIC = 1,
@@ -30,12 +30,16 @@ class SymbolInfo:
         self._args = list()
 
     def __str__(self):
-        return "SymbolInfo({symbolType}, {kind}, {index}, {args})".format(
+        return "SymbolInfo({symbolType}, {kind}, {value} , {index}, {args})".format(
             symbolType=self._type,
             kind=self._kind,
+            value=self._token,
             index=self.index,
             args=self._args
         )
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class SymbolTable:
@@ -47,7 +51,7 @@ class SymbolTable:
     _error_num: int
     _classIndex: dict  # {str: int} 从类名到数组索引
     _classTable: list  # [{str: SymbolInfo}] 类符号表数组, 将一直保留着不会被销毁
-    _subroutineTable: dict  # 函数符号表
+    _subroutineTable: dict  # {str: List<statements>} 函数符号表
     _currentClassNumber: int  # 遍历语法树的时候, 保存当前类符号表数组索引
     _currentClass: str  # 遍历语法树的时候, 保存当前类名称
 
@@ -65,19 +69,21 @@ class SymbolTable:
         self._subroutineTable = {}
         self._currentClass = ""
 
+    # @pysnooper.snoop()
     def insertClassTable(self, expr: ExprAST):
         """ 
         类符号表的插入操作
         """
         if isinstance(expr, ClassExprAST):
             # 处理类
-            temp: dict = {}
-            self._classTable.append(temp)
             expr: ClassExprAST = expr
             self._currentClass = expr.name
+            temp: dict = {}
+            self._classTable.append(temp)
             index: int = len(self._classTable)
             self._classIndex[self._currentClass] = index
             self._static_index = self._field_index = 0
+
             for var in expr._variables:
                 if isinstance(var, VariableExprAST):
                     var: VariableExprAST = var
@@ -90,7 +96,6 @@ class SymbolTable:
                         info = SymbolInfo(var.token, var.kind, SymbolKind.STATIC,
                                           self._static_index)
                         self._static_index += 1
-                    print(temp)
                     if var.name in temp:
                         error_RedeclareVar(
                             self._currentClass, var.value.row, var.scope, var.name)
@@ -100,15 +105,20 @@ class SymbolTable:
                 func: FunctionExprAST = func
                 info: SymbolInfo
                 info = SymbolInfo(func.token, "function", SymbolKind.FUNCTION, len(self._subroutineTable))
+                name = self._parser._get_function_name(func.name)
                 for arg in func._variables:
                     arg: VariableExprAST = arg
                     info._args.append(arg.kind)
-                name = func.name
+                
                 if name in temp:
                     error_redeclareFunction(self._currentClass, "function", name)
                     return
+                # insert function declare
                 temp[name] = info
-                pass
+
+                for func_state: ExprAST in func.statements:
+                    print(func_state)
+                
 
     def insertSubroutineTable(self, expr: ExprAST):
         """  
@@ -151,3 +161,4 @@ if __name__ == "__main__":
     table: SymbolTable = SymbolTable(parser)
     table.insertClassTable(ast)
     print(table._classTable)
+    print(table._classIndex)

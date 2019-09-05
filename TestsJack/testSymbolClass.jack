@@ -1,5 +1,5 @@
 class Test {
-    static int a = 0;
+    static int a = 110;
     field string b = "ss";
 
     function void work(int index) {

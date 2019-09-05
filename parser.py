@@ -65,7 +65,7 @@ class Parser:
 
     def _get_function_name(self, fullname: str) -> str:
         names = fullname.split(".")
-        if len(names) > 0:
+        if len(names) > 1:
             names.pop(0)
         return "".join(names)
 
@@ -288,6 +288,7 @@ class Parser:
             self._eat(token.kind)
             return VariableExprAST(None, None, token, None)
         return EmptyExprAST()
+
 
 
 if __name__ == "__main__":
